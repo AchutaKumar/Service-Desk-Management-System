@@ -1086,3 +1086,4 @@ This repository does not currently contain a formal license file. All rights are
 #### Q: Why does Vite use port 5173 with strictPort?
 **A**: Vite is configured with `strictPort: true` and `host: '127.0.0.1'` to ensure predictable routing. This prevents silent port incrementing to 5174 when older background processes exist, ensuring that the Vite dev proxy to Django always works reliably.
 Commit at 2026-04-07T04:59:24.980243
+Commit at 2025-11-30T20:02:31.335838
