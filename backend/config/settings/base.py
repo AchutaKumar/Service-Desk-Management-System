@@ -218,6 +218,17 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
+
+_cors_origins_env = config('CORS_ALLOWED_ORIGINS', default='')
+if _cors_origins_env:
+    for origin in _cors_origins_env.split(','):
+        if origin.strip():
+            CORS_ALLOWED_ORIGINS.append(origin.strip())
+
+# Automatically allow all Vercel subdomains for the frontend
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
 CORS_ALLOW_CREDENTIALS = True
 
 # ─────────────────────────────────────────
