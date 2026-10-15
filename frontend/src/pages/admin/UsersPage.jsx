@@ -62,6 +62,8 @@ export default function UsersPage() {
   const set = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
 
+  const closeModal = useCallback(() => setModalOpen(false), []);
+
   function openCreate() {
     setEditing(null);
     setForm(EMPTY_FORM);
@@ -265,13 +267,13 @@ export default function UsersPage() {
       {/* Create / edit modal */}
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={closeModal}
         title={editing ? `Edit ${editing.full_name}` : 'Create user'}
         description={editing ? 'Update account details and role.' : 'All fields with * are required.'}
         size="lg"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="secondary" onClick={closeModal}>Cancel</Button>
             <Button loading={busy} onClick={submit}>
               {editing ? 'Save changes' : 'Create user'}
             </Button>

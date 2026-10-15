@@ -7,20 +7,31 @@ import { X } from 'lucide-react';
  */
 export default function Modal({ open, onClose, title, description, children, footer, size = 'md' }) {
   const panelRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return undefined;
+
     function onKeyDown(e) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onCloseRef.current?.();
+      }
     }
+
     document.addEventListener('keydown', onKeyDown);
     document.body.style.overflow = 'hidden';
-    panelRef.current?.focus();
+
+    // Only focus the dialog container on initial open if an element inside is not already focused
+    if (!panelRef.current?.contains(document.activeElement)) {
+      panelRef.current?.focus();
+    }
+
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
