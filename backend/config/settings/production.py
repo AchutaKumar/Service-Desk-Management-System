@@ -25,6 +25,18 @@ if DATABASE_URL:
             conn_health_checks=True,
         )
     }
+elif os.environ.get('VERCEL'):
+    import shutil
+    db_path = BASE_DIR / 'db.sqlite3'
+    tmp_db = Path('/tmp/db.sqlite3')
+    if not tmp_db.exists() and db_path.exists():
+        shutil.copy2(db_path, tmp_db)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': tmp_db,
+        }
+    }
 
 # Security settings for production
 SECURE_BROWSER_XSS_FILTER = True

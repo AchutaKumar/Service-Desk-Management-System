@@ -13,11 +13,19 @@ if '*' not in ALLOWED_HOSTS and '.vercel.app' not in ALLOWED_HOSTS:
 # ─────────────────────────────────────────
 # Database - SQLite for local development
 # Override base.py MySQL setting for easier local setup
-# ─────────────────────────────────────────
+# If on Vercel without a DATABASE_URL, copy SQLite to writable /tmp
+db_path = BASE_DIR / 'db.sqlite3'
+if os.environ.get('VERCEL'):
+    import shutil
+    tmp_db = Path('/tmp/db.sqlite3')
+    if not tmp_db.exists() and db_path.exists():
+        shutil.copy2(db_path, tmp_db)
+    db_path = tmp_db
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': db_path,
     }
 }
 
