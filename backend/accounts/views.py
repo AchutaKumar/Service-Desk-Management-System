@@ -30,26 +30,19 @@ User = get_user_model()
 class RegisterView(APIView):
     """
     POST /api/auth/register/
-    Employee self-registration endpoint.
+    Public self-registration is disabled. Accounts can only be created by an administrator.
     """
     permission_classes = [AllowAny]
 
     @extend_schema(
-        request=UserRegistrationSerializer,
-        summary="Register new employee",
+        summary="Register new employee (Disabled)",
+        description="Public registration is disabled. Accounts are provisioned exclusively by administrators.",
         tags=["Authentication"],
     )
     def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return created_response(
-                message="Registration successful. You can now log in.",
-                data=UserProfileSerializer(user).data,
-            )
         return error_response(
-            message="Registration failed. Please check your input.",
-            errors=serializer.errors,
+            message="Public registration is disabled. Accounts can only be created by an administrator.",
+            status_code=status.HTTP_403_FORBIDDEN,
         )
 
 

@@ -3,7 +3,6 @@ import AppLayout from './components/layout/AppLayout';
 import { ProtectedRoute, RoleRoute, GuestRoute } from './components/auth/RouteGuards';
 
 import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 
@@ -26,7 +25,7 @@ export default function App() {
       {/* Public */}
       <Route element={<GuestRoute />}>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/register" element={<Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
       </Route>

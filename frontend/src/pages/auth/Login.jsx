@@ -43,12 +43,9 @@ export default function Login() {
       title="Sign in to ServiceDesk"
       subtitle="Use your work email and password to continue."
       footer={
-        <>
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="font-medium text-brand-600 hover:text-brand-700">
-            Create one here
-          </Link>
-        </>
+        <p className="text-xs text-slate-500 text-center">
+          Accounts are provisioned by your IT administrator.
+        </p>
       }
     >
       <form onSubmit={onSubmit} noValidate className="space-y-4">
