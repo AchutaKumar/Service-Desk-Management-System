@@ -8,7 +8,10 @@ import dj_database_url
 
 DEBUG = False
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
+_allowed_hosts_raw = config('ALLOWED_HOSTS', default='*')
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_raw.split(',') if h.strip()]
+if '*' not in ALLOWED_HOSTS and '.vercel.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.vercel.app')
 
 # ─────────────────────────────────────────
 # Database - Cloud Database (PostgreSQL / Neon / Supabase / MySQL)

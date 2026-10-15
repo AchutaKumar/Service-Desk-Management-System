@@ -18,6 +18,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # ─────────────────────────────────────────
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
 
+_allowed_hosts_raw = config('ALLOWED_HOSTS', default='*')
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_raw.split(',') if h.strip()]
+if '*' not in ALLOWED_HOSTS and '.vercel.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.extend(['.vercel.app', 'localhost', '127.0.0.1'])
+
 # ─────────────────────────────────────────
 # Application Definition
 # ─────────────────────────────────────────

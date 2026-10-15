@@ -5,7 +5,10 @@ from .base import *  # noqa
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+_allowed_hosts_raw = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.vercel.app')
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_raw.split(',') if h.strip()]
+if '*' not in ALLOWED_HOSTS and '.vercel.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.vercel.app')
 
 # ─────────────────────────────────────────
 # Database - SQLite for local development
