@@ -458,7 +458,7 @@ cd Service-Desk-Management-System
    pip install -r requirements.txt
    ```
 
-4. **Configure environment variables**:
+4. **Configure environment variables & database**:
    Copy the example environment file:
    * **Windows (PowerShell)**:
      ```powershell
@@ -468,7 +468,13 @@ cd Service-Desk-Management-System
      ```bash
      cp .env.example .env
      ```
-   *(The default `.env.example` settings are configured for immediate local SQLite development).*
+   * **Set up MySQL**:
+     Create the database in MySQL (or let Django connect to your existing instance):
+     ```sql
+     CREATE DATABASE IF NOT EXISTS servicedesk_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+     ```
+     Update `DB_USER` and `DB_PASSWORD` in `backend/.env` to match your local MySQL credentials.
+     *(Optional: To run with SQLite instead, add `USE_SQLITE=True` in `backend/.env`).*
 
 5. **Apply database migrations**:
    ```bash
