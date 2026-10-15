@@ -8,8 +8,11 @@ import axios from 'axios';
  *   share the same refresh request), then the original request is retried.
  * - If refresh fails, tokens are cleared and the user is sent to /login.
  */
-
-const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
+let rawBaseURL = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
+if (rawBaseURL && rawBaseURL.startsWith('http') && !rawBaseURL.endsWith('/api') && !rawBaseURL.endsWith('/api/')) {
+  rawBaseURL = `${rawBaseURL.replace(/\/+$/, '')}/api`;
+}
+const baseURL = rawBaseURL;
 
 const ACCESS_KEY = 'sd_access';
 const REFRESH_KEY = 'sd_refresh';
