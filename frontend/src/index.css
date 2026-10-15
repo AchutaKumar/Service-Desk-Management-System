@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* ── ServiceDesk design tokens ──────────────────────────────────────────
+   Direction: professional operations console.
+   Deep navy chrome, blue primary actions, teal secondary accent.
+   Status colors always pair with text labels (never color alone).
+   ────────────────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+
+  /* Brand — deep navy → action blue */
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dce7fd;
+  --color-brand-200: #bfd3fb;
+  --color-brand-300: #93b4f7;
+  --color-brand-400: #6090f1;
+  --color-brand-500: #3b6ae8;
+  --color-brand-600: #2563eb; /* primary action */
+  --color-brand-700: #1d4fd7;
+  --color-brand-800: #1e3a8a;
+  --color-brand-900: #172554; /* sidebar / chrome */
+  --color-brand-950: #0b1630;
+
+  /* Secondary accent */
+  --color-accent-600: #0f766e;
+  --color-accent-500: #14b8a6;
+  --color-accent-50: #f0fdfa;
+
+  /* Semantic feedback */
+  --color-success: #15803d;
+  --color-success-soft: #f0fdf4;
+  --color-warning: #b45309;
+  --color-warning-soft: #fffbeb;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+
+  /* Surfaces */
+  --color-canvas: #f5f7fb;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Visible, consistent focus for keyboard users */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+
+  /* Respect users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Numeric alignment inside tables */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Quiet scrollbars for panels and dropdowns */
+  .scroll-quiet {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  .scroll-quiet::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scroll-quiet::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+}
