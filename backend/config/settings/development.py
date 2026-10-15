@@ -15,7 +15,7 @@ if '*' not in ALLOWED_HOSTS and '.vercel.app' not in ALLOWED_HOSTS:
 # Fallback to SQLite only if USE_SQLITE=True or on Vercel without external DB
 # ─────────────────────────────────────────
 USE_SQLITE = config('USE_SQLITE', default=False, cast=bool)
-if USE_SQLITE or os.environ.get('VERCEL'):
+if USE_SQLITE or (os.environ.get('VERCEL') and not config('DATABASE_URL', default=None) and not config('DB_HOST', default=None)):
     db_path = BASE_DIR / 'db.sqlite3'
     if os.environ.get('VERCEL'):
         import shutil

@@ -25,6 +25,10 @@ if DATABASE_URL:
             conn_health_checks=True,
         )
     }
+    DATABASES['default'].setdefault('OPTIONS', {})
+    if 'mysql' in DATABASES['default'].get('ENGINE', ''):
+        DATABASES['default']['OPTIONS'].setdefault('charset', 'utf8mb4')
+        DATABASES['default']['OPTIONS'].setdefault('init_command', "SET sql_mode='STRICT_TRANS_TABLES'")
 elif config('DB_HOST', default=None):
     DATABASES = {
         'default': {
