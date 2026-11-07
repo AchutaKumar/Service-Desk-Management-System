@@ -2,15 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  ChevronLeft, Paperclip, Send, Trash2, PencilLine, History as HistoryIcon,
+  ChevronLeft, Paperclip, Trash2, History as HistoryIcon,
   FileText, MessageSquare, UserPlus, CheckCircle2, Clock,
 } from 'lucide-react';
 import { Panel } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { Textarea, Select } from '../../components/ui/Form';
 import { PageLoading, ErrorState, EmptyState, Spinner } from '../../components/ui/States';
 import Modal, { ConfirmDialog } from '../../components/ui/Modal';
-import { StatusChip, SLAChip, PriorityChip, Avatar } from '../../components/ui/Chips';
+import { StatusChip, SLAChip, PriorityChip } from '../../components/ui/Chips';
+import TicketChat from '../../components/tickets/TicketChat';
 import { ticketsApi, usersApi } from '../../api';
 import { apiErrorMessage } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -37,11 +37,6 @@ export default function TicketDetailPage() {
   const [error, setError] = useState('');
   const [actionBusy, setActionBusy] = useState(false);
 
-  const [comment, setComment] = useState('');
-  const [commentBusy, setCommentBusy] = useState(false);
-  const [editingComment, setEditingComment] = useState(null); // { id, content }
-  const [deleteComment, setDeleteComment] = useState(null);
-
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
@@ -51,20 +46,27 @@ export default function TicketDetailPage() {
   const [assignTarget, setAssignTarget] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // Ignore out-of-order responses (e.g. a slow initial load landing after an
+  // action-triggered reload) so the screen never reverts to stale data.
+  const requestSeq = useRef(0);
+
   const load = useCallback(async () => {
+    const seq = ++requestSeq.current;
     setLoading(true);
     setError('');
     try {
       const { data } = await ticketsApi.get(id);
+      if (seq !== requestSeq.current) return;
       setTicket(data.data);
     } catch (err) {
+      if (seq !== requestSeq.current) return;
       setError(
         err?.response?.status === 403
           ? 'You do not have permission to view this ticket.'
           : apiErrorMessage(err, 'Could not load the ticket.')
       );
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   }, [id]);
 
@@ -124,44 +126,6 @@ export default function TicketDetailPage() {
     } catch (err) {
       toast.error(apiErrorMessage(err));
       setActionBusy(false);
-    }
-  }
-
-  async function submitComment(e) {
-    e.preventDefault();
-    if (!comment.trim()) return;
-    setCommentBusy(true);
-    try {
-      await ticketsApi.addComment(ticket.id, comment.trim());
-      setComment('');
-      await load();
-    } catch (err) {
-      toast.error(apiErrorMessage(err));
-    } finally {
-      setCommentBusy(false);
-    }
-  }
-
-  async function saveEditedComment() {
-    if (!editingComment?.content.trim()) return;
-    try {
-      await ticketsApi.updateComment(ticket.id, editingComment.id, editingComment.content.trim());
-      setEditingComment(null);
-      toast.success('Comment updated.');
-      await load();
-    } catch (err) {
-      toast.error(apiErrorMessage(err));
-    }
-  }
-
-  async function confirmDeleteComment() {
-    try {
-      await ticketsApi.deleteComment(ticket.id, deleteComment.id);
-      setDeleteComment(null);
-      toast.success('Comment deleted.');
-      await load();
-    } catch (err) {
-      toast.error(apiErrorMessage(err));
     }
   }
 
@@ -336,93 +300,13 @@ export default function TicketDetailPage() {
             )}
           </Panel>
 
-          {/* Comments */}
-          <Panel title={`Conversation (${ticket.comments?.length || 0})`}>
-            <ul className="space-y-4">
-              {ticket.comments?.map((c) => (
-                <li key={c.id} className="flex gap-3">
-                  <Avatar name={c.user?.full_name} />
-                  <div className="min-w-0 flex-1 rounded-xl bg-slate-50 px-4 py-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-slate-800">
-                        {c.user?.full_name}
-                        <span className="ml-2 text-xs font-normal text-slate-400">
-                          {c.user?.role === 'SUPPORT_AGENT' ? 'Support' : c.user?.role === 'ADMIN' ? 'Admin' : ''}
-                        </span>
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-400">{relativeTime(c.created_at)}</span>
-                        {c.is_own_comment && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setEditingComment({ id: c.id, content: c.content })}
-                              className="text-slate-400 transition-colors hover:text-brand-600"
-                              aria-label="Edit comment"
-                            >
-                              <PencilLine className="size-3.5" aria-hidden="true" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleteComment(c)}
-                              className="text-slate-400 transition-colors hover:text-red-600"
-                              aria-label="Delete comment"
-                            >
-                              <Trash2 className="size-3.5" aria-hidden="true" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {editingComment?.id === c.id ? (
-                      <div className="mt-2 space-y-2">
-                        <Textarea
-                          rows={3}
-                          value={editingComment.content}
-                          onChange={(e) => setEditingComment((v) => ({ ...v, content: e.target.value }))}
-                          aria-label="Edit comment text"
-                        />
-                        <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="ghost" onClick={() => setEditingComment(null)}>
-                            Cancel
-                          </Button>
-                          <Button size="sm" onClick={saveEditedComment}>Save</Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="mt-1 text-sm leading-relaxed whitespace-pre-wrap text-slate-700">
-                        {c.content}
-                      </p>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            {canComment ? (
-              <form onSubmit={submitComment} className="mt-5 border-t border-slate-100 pt-4">
-                <Textarea
-                  rows={3}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Write a reply…"
-                  aria-label="Add a comment"
-                />
-                <div className="mt-2 flex justify-end">
-                  <Button type="submit" size="sm" loading={commentBusy} disabled={!comment.trim()}>
-                    <Send className="size-4" aria-hidden="true" />
-                    Send
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
-                {closed
-                  ? 'This ticket is closed — the conversation is read-only.'
-                  : 'You can view but not comment on this ticket.'}
-              </p>
-            )}
-          </Panel>
+          {/* Real-time Conversation Chat */}
+          <TicketChat
+            ticket={ticket}
+            currentUser={user}
+            canComment={canComment}
+            onTicketStatusChange={load}
+          />
         </div>
 
         {/* Side column */}
@@ -521,17 +405,6 @@ export default function TicketDetailPage() {
         title="Delete this ticket?"
         message={`${ticket.ticket_id} and all its comments, attachments and history will be permanently removed. This cannot be undone.`}
         confirmLabel="Delete ticket"
-      />
-
-      {/* Delete comment confirmation */}
-      <ConfirmDialog
-        open={!!deleteComment}
-        onClose={() => setDeleteComment(null)}
-        onConfirm={confirmDeleteComment}
-        danger
-        title="Delete comment?"
-        message="This comment will be permanently removed."
-        confirmLabel="Delete"
       />
     </>
   );

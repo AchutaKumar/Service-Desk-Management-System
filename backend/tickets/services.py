@@ -50,9 +50,12 @@ def get_sla_status(ticket):
             return 'RESOLVED_WITHIN_SLA'
         return 'RESOLVED_AFTER_SLA'
 
-    # For closed tickets
+    # For closed tickets — prefer resolved_at if closed_at is missing (data integrity guard)
     if ticket.status == 'CLOSED':
-        return 'RESOLVED_WITHIN_SLA' if ticket.closed_at <= ticket.due_at else 'RESOLVED_AFTER_SLA'
+        compare_time = ticket.closed_at or ticket.resolved_at
+        if compare_time is None:
+            return 'NO_SLA'
+        return 'RESOLVED_WITHIN_SLA' if compare_time <= ticket.due_at else 'RESOLVED_AFTER_SLA'
 
     # For active tickets
     if now > ticket.due_at:
@@ -133,11 +136,34 @@ def create_notification(recipient, ticket, message):
     Create an in-app notification for a user about a ticket event.
     """
     from notifications.models import Notification
-    Notification.objects.create(
+    notification = Notification.objects.create(
         recipient=recipient,
         ticket=ticket,
         message=message,
     )
+    # Broadcast to user's real-time notification channel
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{recipient.id}",
+                {
+                    "type": "notification_message",
+                    "notification": {
+                        "id": notification.id,
+                        "message": notification.message,
+                        "ticket_id": ticket.ticket_id if ticket else None,
+                        "ticket_title": ticket.title if ticket else None,
+                        "is_read": False,
+                        "created_at": notification.created_at.isoformat(),
+                    },
+                }
+            )
+    except Exception:
+        pass
+    return notification
 
 
 def notify_ticket_created(ticket):

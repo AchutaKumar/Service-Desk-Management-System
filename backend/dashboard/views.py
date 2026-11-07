@@ -19,7 +19,7 @@ from accounts.permissions import IsAdmin, IsSupportAgent, IsEmployee
 
 class EmployeeDashboardView(APIView):
     """GET /api/dashboard/employee/ - Employee's own ticket statistics."""
-    permission_classes = [IsAuthenticated, IsEmployee]
+    permission_classes = [IsAuthenticated]  # Admins can also view for debugging
 
     @extend_schema(summary="Employee dashboard stats", tags=["Dashboard"])
     def get(self, request):
@@ -27,6 +27,10 @@ class EmployeeDashboardView(APIView):
         from tickets.serializers import TicketListSerializer
 
         user = request.user
+        # Employees see their own tickets; admins can also call this to test
+        if user.role not in ['EMPLOYEE', 'ADMIN']:
+            from common.responses import forbidden_response
+            return forbidden_response("Only employees and admins can access this dashboard.")
         # Base queryset for this employee's tickets
         # Using select_related for efficiency
         qs = ServiceRequest.objects.filter(
@@ -63,7 +67,7 @@ class EmployeeDashboardView(APIView):
 
 class AgentDashboardView(APIView):
     """GET /api/dashboard/agent/ - Agent's ticket workload and stats."""
-    permission_classes = [IsAuthenticated, IsSupportAgent]
+    permission_classes = [IsAuthenticated]  # Admins can also view for debugging
 
     @extend_schema(summary="Agent dashboard stats", tags=["Dashboard"])
     def get(self, request):
@@ -71,6 +75,10 @@ class AgentDashboardView(APIView):
         from tickets.serializers import TicketListSerializer
 
         user = request.user
+        # Agents see their workload; admins can also call this to test
+        if user.role not in ['SUPPORT_AGENT', 'ADMIN']:
+            from common.responses import forbidden_response
+            return forbidden_response("Only support agents and admins can access this dashboard.")
         now = timezone.now()
 
         # Agent's assigned tickets

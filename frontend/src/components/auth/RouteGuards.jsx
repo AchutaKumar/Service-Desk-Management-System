@@ -20,7 +20,9 @@ export function ProtectedRoute() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    // Preserve path *and* query so deep links (e.g. /tickets?search=SR-1001)
+    // survive the login round-trip.
+    return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />;
   }
   return <Outlet />;
 }

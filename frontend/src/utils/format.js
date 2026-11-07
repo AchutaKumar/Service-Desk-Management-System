@@ -31,13 +31,14 @@ export function relativeTime(value) {
   const diffMs = d.getTime() - Date.now();
   const abs = Math.abs(diffMs);
   const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  const seconds = Math.round(abs / 1000);
+  if (seconds < 60) return rtf.format(diffMs > 0 ? seconds : -seconds, 'second');
   const minutes = Math.round(abs / 60000);
-  if (minutes < 1) return rtf.format(Math.round(diffMs / 1000), 'second');
-  if (minutes < 60) return rtf.format(diffMs / 60000, 'minute');
+  if (minutes < 60) return rtf.format(diffMs > 0 ? minutes : -minutes, 'minute');
   const hours = Math.round(abs / 3600000);
-  if (hours < 24) return rtf.format(diffMs / 3600000, 'hour');
+  if (hours < 24) return rtf.format(diffMs > 0 ? hours : -hours, 'hour');
   const days = Math.round(abs / 86400000);
-  if (days < 30) return rtf.format(diffMs / 86400000, 'day');
+  if (days < 30) return rtf.format(diffMs > 0 ? days : -days, 'day');
   return formatDate(value);
 }
 

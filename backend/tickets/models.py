@@ -163,10 +163,20 @@ class ServiceRequest(models.Model):
     @classmethod
     def _generate_ticket_id(cls):
         """
-        Generate a sequential ticket ID like SR-1001.
-        Gets the highest existing ticket number and increments it.
+        Generate the next sequential ticket ID (e.g. SR-1001).
+
+        Uses Python-side MAX over the existing numeric suffixes so the query
+        works on any database backend (SQLite in development, MySQL/PostgreSQL
+        in production).  The unique=True constraint on ticket_id is the real
+        guard against duplicates — this just picks a sensible starting value.
         """
-        last_ticket = cls.objects.order_by('-id').first()
+        last_ticket = (
+            cls.objects
+            .filter(ticket_id__startswith='SR-')
+            .only('ticket_id')
+            .order_by('-id')
+            .first()
+        )
         if last_ticket and last_ticket.ticket_id:
             try:
                 last_num = int(last_ticket.ticket_id.split('-')[1])

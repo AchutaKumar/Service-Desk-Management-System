@@ -232,10 +232,12 @@ async function main() {
   let text = await pageText(tab);
   record('Login page renders', text.includes('Sign in to ServiceDesk'));
 
+  // Public self-registration is intentionally disabled (backend returns 403 and
+  // the app redirects /register → /login). Assert that intended behavior.
   await tab.navigate(`${BASE}/register`);
-  await tab.waitFor(`document.body.innerText.includes('Create your account')`);
-  text = await pageText(tab);
-  record('Register page renders', text.includes('Create your account'));
+  await tab.waitFor(`location.pathname === '/login'`, 8000, 300);
+  const regPath = await tab.evaluate('location.pathname');
+  record('Register route redirects to /login (self-registration disabled)', regPath === '/login', regPath);
 
   await tab.navigate(`${BASE}/forgot-password`);
   await tab.waitFor(`document.body.innerText.includes('Reset your password')`);
@@ -277,18 +279,18 @@ async function main() {
   record('Ticket detail shows ticket id', text.includes('SR-'));
 
   await tab.navigate(`${BASE}/notifications`);
-  await sleep(600);
+  await tab.waitFor(`document.body.innerText.includes('Notifications')`, 10000);
   text = await pageText(tab);
   record('Notifications page renders', text.includes('Notifications'));
 
   await tab.navigate(`${BASE}/profile`);
-  await sleep(600);
+  await tab.waitFor(`document.body.innerText.includes('My profile')`, 10000);
   text = await pageText(tab);
   record('Profile page renders', text.includes('My profile'));
 
   // Employee must not see admin pages
   await tab.navigate(`${BASE}/users`);
-  await sleep(700);
+  await tab.waitFor(`document.body.innerText.includes('Access restricted')`, 10000);
   text = await pageText(tab);
   record('Employee blocked from /users', text.includes('Access restricted'));
 
@@ -311,17 +313,17 @@ async function main() {
   record('Users page lists seeded users', text.includes('User management') && text.includes('admin@servicedesk.com'));
 
   await tab.navigate(`${BASE}/categories`);
-  await sleep(800);
+  await tab.waitFor(`document.body.innerText.includes('Hardware') && document.body.innerText.includes('Software')`, 12000);
   text = await pageText(tab);
   record('Categories page lists seeded categories', text.includes('Hardware') && text.includes('Software'));
 
   await tab.navigate(`${BASE}/departments`);
-  await sleep(800);
+  await tab.waitFor(`document.body.innerText.includes('IT Department')`, 12000);
   text = await pageText(tab);
   record('Departments page lists seeded departments', text.includes('IT Department'));
 
   await tab.navigate(`${BASE}/priorities`);
-  await sleep(800);
+  await tab.waitFor(`document.body.innerText.includes('Priorities & SLA') && document.body.innerText.includes('hours to resolve')`, 12000);
   text = await pageText(tab);
   record('Priorities page lists SLA targets', text.includes('Priorities & SLA') && text.includes('hours to resolve'));
 

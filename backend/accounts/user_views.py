@@ -97,7 +97,7 @@ class UserActivateView(APIView):
         try:
             user = User.objects.get(pk=pk)
             user.is_active = True
-            user.save()
+            user.save(update_fields=['is_active'])
             return success_response(f"User {user.get_full_name()} has been activated.")
         except User.DoesNotExist:
             return not_found_response("User not found.")
@@ -114,7 +114,7 @@ class UserDeactivateView(APIView):
             if user == request.user:
                 return error_response("You cannot deactivate your own account.")
             user.is_active = False
-            user.save()
+            user.save(update_fields=['is_active'])
             return success_response(f"User {user.get_full_name()} has been deactivated.")
         except User.DoesNotExist:
             return not_found_response("User not found.")
@@ -127,7 +127,8 @@ class AgentListView(APIView):
     @extend_schema(summary="List all support agents", tags=["User Management"])
     def get(self, request):
         agents = User.objects.filter(
-            role='SUPPORT_AGENT'
+            role='SUPPORT_AGENT',
+            is_active=True,  # Only active agents available for ticket assignment
         ).select_related('department').order_by('first_name')
         serializer = AdminUserListSerializer(agents, many=True)
         return success_response(data=serializer.data)

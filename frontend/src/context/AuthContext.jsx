@@ -21,17 +21,35 @@ export function AuthProvider({ children }) {
         setBooting(false);
         return;
       }
-      try {
-        const { data } = await authApi.me();
-        if (!cancelled) setUser(data.data);
-      } catch {
-        tokenStore.clear();
-        if (!cancelled) setUser(null);
-      } finally {
-        if (!cancelled) setBooting(false);
+      // Retry transient server failures a couple of times before giving up,
+      // so a brief backend hiccup doesn't tear down an otherwise valid session.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { data } = await authApi.me();
+          if (!cancelled) setUser(data.data);
+          return;
+        } catch (err) {
+          const status = err?.response?.status;
+          const transient = !status || status >= 500;
+          if (!transient) {
+            // Definitive auth failure (401/403): the stored session is invalid.
+            tokenStore.clear();
+            if (!cancelled) setUser(null);
+            return;
+          }
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+            continue;
+          }
+          // Server is down/unreachable — keep tokens (do not destroy the
+          // session over a 5xx) and finish booting without a user.
+          if (!cancelled) setUser(null);
+        }
       }
     }
-    bootstrap();
+    bootstrap().finally(() => {
+      if (!cancelled) setBooting(false);
+    });
     return () => {
       cancelled = true;
     };

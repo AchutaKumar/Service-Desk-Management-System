@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Bell, CheckCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/ui/PageHeader';
@@ -104,7 +105,12 @@ export default function NotificationsPage() {
                     <p className={`text-sm text-slate-700 ${n.is_read ? '' : 'font-medium'}`}>{n.message}</p>
                     <p className="mt-0.5 text-xs text-slate-400">
                       {n.ticket_id && (
-                        <span className="mr-2 font-medium text-slate-500 tabular-nums">{n.ticket_id}</span>
+                        <Link
+                          to={`/tickets?search=${encodeURIComponent(n.ticket_id)}`}
+                          className="mr-2 font-medium text-brand-600 tabular-nums hover:text-brand-700"
+                        >
+                          {n.ticket_id}
+                        </Link>
                       )}
                       {relativeTime(n.created_at)} · {formatDateTime(n.created_at)}
                     </p>

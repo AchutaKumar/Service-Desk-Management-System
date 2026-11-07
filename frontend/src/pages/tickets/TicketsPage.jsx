@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Plus, Search, X } from 'lucide-react';
@@ -61,7 +61,12 @@ export default function TicketsPage() {
     [setSearchParams]
   );
 
+  // Monotonic request id: a slow, earlier response must never overwrite a
+  // newer one (filter/pagination changes fire overlapping requests).
+  const requestSeq = useRef(0);
+
   const load = useCallback(async () => {
+    const seq = ++requestSeq.current;
     setLoading(true);
     setError('');
     try {
@@ -69,6 +74,7 @@ export default function TicketsPage() {
         Object.entries(filters).filter(([, v]) => v !== '')
       );
       const { data: body } = await ticketsApi.list(params);
+      if (seq !== requestSeq.current) return; // stale response — discard
       setData({
         results: body.results || [],
         count: body.count ?? 0,
@@ -78,9 +84,10 @@ export default function TicketsPage() {
         previous: body.previous,
       });
     } catch (err) {
+      if (seq !== requestSeq.current) return; // stale response — discard
       setError(apiErrorMessage(err, 'Could not load tickets.'));
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   }, [filters]);
 
@@ -203,6 +210,9 @@ export default function TicketsPage() {
             <Input
               aria-label="Search tickets"
               placeholder="Search tickets…"
+              // Re-sync the uncontrolled value whenever the URL filter changes
+              // (clear filters, back/forward navigation, notification deep links).
+              key={filters.search}
               defaultValue={filters.search}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') setFilter('search', e.currentTarget.value.trim());

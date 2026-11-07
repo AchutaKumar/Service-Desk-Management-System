@@ -62,6 +62,19 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
+# HSTS: tells browsers to always use HTTPS for this domain.
+# Set to 1 year (31536000s). Only enable when the site is fully on HTTPS.
+# Read https://docs.djangoproject.com/en/stable/ref/settings/#secure-hsts-seconds
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# Redirect HTTP → HTTPS at the Django level (as a backstop; your load balancer
+# should also do this).  Disable if you're behind a proxy that handles it.
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
 
 # Static files with WhiteNoise for serverless & containerized serving
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')

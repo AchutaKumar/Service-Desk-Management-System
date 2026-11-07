@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { notificationsApi } from '../../api';
 import { apiErrorMessage } from '../../api/client';
+import { getWebSocketUrl } from '../../api/websocket';
 import { Avatar } from '../ui/Chips';
 import { relativeTime } from '../../utils/format';
 
@@ -36,6 +37,50 @@ export default function Topbar({ onOpenMobileNav }) {
     const id = setInterval(loadNotifications, 60000);
     return () => clearInterval(id);
   }, [loadNotifications]);
+
+  // Real-time WebSocket notifications
+  useEffect(() => {
+    if (!user) return;
+    let ws = null;
+    let reconnectTimer = null;
+    let cancelled = false;
+
+    function connectWs() {
+      try {
+        const url = getWebSocketUrl('/ws/notifications/');
+        ws = new WebSocket(url);
+
+        ws.onmessage = (event) => {
+          if (cancelled) return;
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'notification' && data.notification) {
+              setNotifications((prev) => [data.notification, ...prev]);
+              setUnreadCount((c) => c + 1);
+              toast(data.notification.message, {
+                icon: '🔔',
+                duration: 4500,
+              });
+            }
+          } catch {}
+        };
+
+        ws.onclose = () => {
+          if (!cancelled) {
+            reconnectTimer = setTimeout(connectWs, 5000);
+          }
+        };
+      } catch {}
+    }
+
+    connectWs();
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) ws.close(1000);
+    };
+  }, [user]);
 
   // Close popovers on outside click / Escape
   useEffect(() => {
@@ -81,7 +126,9 @@ export default function Topbar({ onOpenMobileNav }) {
         // Ignore; navigation still proceeds
       }
     }
-    if (n.ticket_id) navigate('/tickets');
+    // The API exposes the human-readable id (e.g. "SR-1001"), not the numeric pk,
+    // so deep-link through the list's search filter to reach that exact ticket.
+    if (n.ticket_id) navigate(`/tickets?search=${encodeURIComponent(n.ticket_id)}`);
   }
 
   async function onLogout() {

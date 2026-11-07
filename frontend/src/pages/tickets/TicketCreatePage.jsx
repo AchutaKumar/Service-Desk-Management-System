@@ -6,12 +6,15 @@ import PageHeader from '../../components/ui/PageHeader';
 import { Panel } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { Field, Input, Select, Textarea } from '../../components/ui/Form';
+import { ErrorState } from '../../components/ui/States';
 import { ticketsApi, categoriesApi, departmentsApi } from '../../api';
 import { apiErrorMessage } from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import { PRIORITY } from '../../utils/constants';
 
 export default function TicketCreatePage() {
   const navigate = useNavigate();
+  const { isAgent } = useAuth();
 
   const [form, setForm] = useState({
     title: '',
@@ -51,6 +54,23 @@ export default function TicketCreatePage() {
       // Reset dependent selections when the parent changes
       ...(key === 'category' ? { subcategory: '' } : {}),
     }));
+
+  // The backend rejects ticket creation for support agents (403). Guard the
+  // route too so a direct URL hit shows a clear message instead of a failed submit.
+  if (isAgent) {
+    return (
+      <>
+        <Link
+          to="/tickets"
+          className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
+        >
+          <ChevronLeft className="size-4" aria-hidden="true" />
+          Back to tickets
+        </Link>
+        <ErrorState message="Support agents cannot create tickets. Open the ticket queue to pick up and work on requests." />
+      </>
+    );
+  }
 
   async function onSubmit(e) {
     e.preventDefault();

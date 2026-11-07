@@ -366,6 +366,28 @@ class TicketStatusChangeView(APIView):
         )
         notify_status_changed(ticket, old_status, user)
 
+        # Broadcast status transition to connected WebSocket clients
+        try:
+            from asgiref.sync import async_to_sync
+            from channels.layers import get_channel_layer
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f"ticket_{ticket.id}",
+                    {
+                        "type": "ticket_status_changed",
+                        "ticket_id": ticket.id,
+                        "status": new_status,
+                        "data": {
+                            "old_status": old_status,
+                            "new_status": new_status,
+                            "resolved_at": ticket.resolved_at.isoformat() if ticket.resolved_at else None,
+                        },
+                    }
+                )
+        except Exception:
+            pass
+
         return success_response(
             f"Ticket status changed from {old_status} to {new_status}.",
             data=TicketDetailSerializer(ticket, context={'request': request}).data,
@@ -533,6 +555,33 @@ class TicketCommentListCreateView(APIView):
         )
         notify_comment_added(ticket, request.user)
 
+        # Broadcast via Channel layer to live WebSocket viewers
+        try:
+            from asgiref.sync import async_to_sync
+            from channels.layers import get_channel_layer
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f"ticket_{ticket.id}",
+                    {
+                        "type": "chat_message",
+                        "comment": {
+                            'id': comment.id,
+                            'content': comment.content,
+                            'user': {
+                                'id': request.user.id,
+                                'email': request.user.email,
+                                'full_name': request.user.get_full_name(),
+                                'role': request.user.role,
+                            },
+                            'created_at': comment.created_at.isoformat(),
+                            'updated_at': comment.updated_at.isoformat(),
+                        },
+                    }
+                )
+        except Exception:
+            pass
+
         return created_response(
             "Comment added.",
             data=TicketCommentSerializer(comment, context={'request': request}).data,
@@ -566,6 +615,34 @@ class TicketCommentDetailView(APIView):
         serializer = TicketCommentCreateSerializer(comment, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+
+            # Broadcast updated comment to live WebSocket clients
+            try:
+                from asgiref.sync import async_to_sync
+                from channels.layers import get_channel_layer
+                channel_layer = get_channel_layer()
+                if channel_layer:
+                    async_to_sync(channel_layer.group_send)(
+                        f"ticket_{pk}",
+                        {
+                            "type": "comment_updated",
+                            "comment": {
+                                'id': comment.id,
+                                'content': comment.content,
+                                'user': {
+                                    'id': comment.user.id,
+                                    'email': comment.user.email,
+                                    'full_name': comment.user.get_full_name(),
+                                    'role': comment.user.role,
+                                },
+                                'created_at': comment.created_at.isoformat(),
+                                'updated_at': comment.updated_at.isoformat(),
+                            },
+                        }
+                    )
+            except Exception:
+                pass
+
             return success_response("Comment updated.", TicketCommentSerializer(comment, context={'request': request}).data)
         return error_response("Update failed.", errors=serializer.errors)
 
@@ -575,6 +652,23 @@ class TicketCommentDetailView(APIView):
         if error:
             return error
         comment.delete()
+
+        # Broadcast comment deletion to live WebSocket clients
+        try:
+            from asgiref.sync import async_to_sync
+            from channels.layers import get_channel_layer
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f"ticket_{pk}",
+                    {
+                        "type": "comment_deleted",
+                        "comment_id": int(comment_pk),
+                    }
+                )
+        except Exception:
+            pass
+
         return success_response("Comment deleted.")
 
 

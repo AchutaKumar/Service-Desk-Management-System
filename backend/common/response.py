@@ -1,19 +1,10 @@
-from rest_framework.response import Response
-
-
-def ok(message="OK", data=None, code=200):
-    payload = {"success": True, "message": message}
-    if data is not None:
-        payload["data"] = data
-    return Response(payload, status=code)
-
-
-def created(message="Created", data=None):
-    return ok(message, data, code=201)
-
-
-def fail(message="Error", errors=None, code=400):
-    payload = {"success": False, "message": message}
-    if errors is not None:
-        payload["errors"] = errors
-    return Response(payload, status=code)
+"""
+DEPRECATED: This file is a legacy duplicate of common/responses.py.
+Import from common.responses instead.
+"""
+# Re-export the canonical helpers so any accidental imports still work.
+from common.responses import (  # noqa: F401
+    success_response as ok,
+    created_response as created,
+    error_response as fail,
+)
