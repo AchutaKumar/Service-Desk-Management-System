@@ -16,7 +16,7 @@ export function useTicketChat(ticketId, initialComments = [], onTicketStatusChan
   const reconnectAttemptsRef = useRef(0);
   const isFetchingRef = useRef(false);
 
-  // Helper to merge comments without duplicates
+  // Helper to merge comments without duplicates, ONLY updating state if there are actual new/edited comments
   const mergeComments = useCallback((newComments) => {
     if (!newComments || !newComments.length) return;
     setComments((prev) => {
@@ -24,9 +24,23 @@ export function useTicketChat(ticketId, initialComments = [], onTicketStatusChan
       for (const c of prev) {
         commentMap.set(c.id, c);
       }
+      let hasChanges = false;
       for (const c of newComments) {
-        commentMap.set(c.id, c);
+        const existing = commentMap.get(c.id);
+        if (!existing) {
+          commentMap.set(c.id, c);
+          hasChanges = true;
+        } else if (existing.content !== c.content || existing.updated_at !== c.updated_at) {
+          commentMap.set(c.id, c);
+          hasChanges = true;
+        }
       }
+
+      // If no new messages and no message edits, retain identical reference to prevent re-renders
+      if (!hasChanges && commentMap.size === prev.length) {
+        return prev;
+      }
+
       return Array.from(commentMap.values()).sort(
         (a, b) => new Date(a.created_at) - new Date(b.created_at)
       );

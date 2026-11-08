@@ -40,13 +40,14 @@ export default function TicketChat({
   const prevCommentsLengthRef = useRef(comments?.length || 0);
   const justSentRef = useRef(false);
 
-  // Auto-scroll to bottom on mount and when new messages arrive
+  // Auto-scroll to bottom of chat container ONLY (never scrolls the outer page/window)
   const scrollToBottom = useCallback((smooth = true) => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({
-        behavior: smooth ? 'smooth' : 'auto',
-        block: 'end',
-      });
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    if (smooth) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    } else {
+      el.scrollTop = el.scrollHeight;
     }
   }, []);
 
@@ -58,24 +59,32 @@ export default function TicketChat({
     setShowScrollBottom(distanceToBottom > 120);
   }, []);
 
+  // Only scroll when a brand new message arrives or when this user sends
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
 
-    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+    const hadNewMessage = (comments?.length || 0) > prevCommentsLengthRef.current;
     prevCommentsLengthRef.current = comments?.length || 0;
 
-    // Scroll to bottom if user is near bottom or just sent a message
-    if (isNearBottom || justSentRef.current) {
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+
+    // Scroll if this user just sent, OR if a new message arrived while already near the bottom
+    if (justSentRef.current) {
       justSentRef.current = false;
+      scrollToBottom(true);
+    } else if (hadNewMessage && isNearBottom) {
       scrollToBottom(true);
     }
   }, [comments, scrollToBottom]);
 
-  // Initial scroll to bottom
+  // Initial scroll to bottom on mount (instant, no page jump)
   useEffect(() => {
-    scrollToBottom(false);
-  }, [scrollToBottom]);
+    const el = scrollContainerRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, []);
 
   // Handle typing debounce
   const handleInputChange = (e) => {
