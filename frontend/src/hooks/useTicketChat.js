@@ -60,9 +60,9 @@ export function useTicketChat(ticketId, initialComments = [], onTicketStatusChan
   }, [initialComments, mergeComments]);
 
   // Background polling sync:
-  // Every 3 seconds when offline, every 6 seconds when online (bulletproof backup)
+  // Every 2 seconds when disconnected, every 4 seconds when connected (bulletproof backup)
   useEffect(() => {
-    const intervalTime = connectionStatus === 'connected' ? 6000 : 3000;
+    const intervalTime = connectionStatus === 'connected' ? 4000 : 2000;
     pollIntervalRef.current = setInterval(() => {
       syncComments();
     }, intervalTime);
@@ -242,6 +242,10 @@ export function useTicketChat(ticketId, initialComments = [], onTicketStatusChan
           message: text,
         }));
         sendTyping(false);
+        // Safety sync in case WebSocket broadcast was missed
+        setTimeout(() => {
+          if (isMountedRef.current) syncComments();
+        }, 400);
       } catch {
         // If send failed, fallback to REST
         const { data } = await ticketsApi.addComment(ticketId, text);

@@ -5,10 +5,13 @@ from .base import *  # noqa
 
 DEBUG = True
 
-_allowed_hosts_raw = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.vercel.app')
-ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_raw.split(',') if h.strip()]
-if '*' not in ALLOWED_HOSTS and '.vercel.app' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('.vercel.app')
+# Allow all hosts and origins in development (enables mobile testing over Wi-Fi/LAN)
+ALLOWED_HOSTS = ['*']
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://.*",
+    r"^https://.*",
+]
 
 # ─────────────────────────────────────────
 # Database - MySQL (configured in base.py)

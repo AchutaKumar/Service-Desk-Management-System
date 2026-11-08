@@ -27,14 +27,10 @@ export function getWebSocketUrl(path) {
     return token ? `${url}?token=${encodeURIComponent(token)}` : url;
   }
 
-  // 3. In dev mode (e.g. Vite on port 5173): connect directly to Django backend (127.0.0.1:8000)
-  // to avoid Vite dev-proxy WebSocket upgrade drops and timeouts
-  if (import.meta.env.DEV && window.location.port !== '8000') {
-    const url = `ws://127.0.0.1:8000${cleanPath}`;
-    return token ? `${url}?token=${encodeURIComponent(token)}` : url;
-  }
-
-  // 4. Same-origin default (production behind reverse proxy / Nginx / Daphne)
+  // 3. Same-origin default:
+  // - On laptop: ws://localhost:5173/ws/... (proxied by Vite to Daphne)
+  // - On mobile over Wi-Fi: ws://<laptop-lan-ip>:5173/ws/... (proxied by Vite to Daphne)
+  // - In production: wss://<domain>/ws/... (proxied by Nginx/Caddy/Vercel)
   const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const url = `${wsProto}//${window.location.host}${cleanPath}`;
   return token ? `${url}?token=${encodeURIComponent(token)}` : url;

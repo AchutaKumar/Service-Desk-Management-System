@@ -7,13 +7,10 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    // Bind IPv4 explicitly. Without this, Vite binds only the IPv6 loopback on
-    // some Windows machines, so browsers that resolve `localhost` to 127.0.0.1
-    // get a connection error even though the terminal shows a URL.
-    host: '127.0.0.1',
+    // Bind to 0.0.0.0 so devices on local Wi-Fi / LAN (like mobile phones) can connect
+    host: '0.0.0.0',
     port: 5173,
     // Fail loudly if the port is taken instead of silently moving to 5174
-    // (a moved port would leave the user staring at a stale tab).
     strictPort: true,
     proxy: {
       '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
