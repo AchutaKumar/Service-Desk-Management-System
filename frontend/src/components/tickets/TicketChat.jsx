@@ -38,6 +38,7 @@ export default function TicketChat({
   const scrollContainerRef = useRef(null);
   const typingTimerRef = useRef(null);
   const prevCommentsLengthRef = useRef(comments?.length || 0);
+  const justSentRef = useRef(false);
 
   // Auto-scroll to bottom on mount and when new messages arrive
   const scrollToBottom = useCallback((smooth = true) => {
@@ -62,11 +63,11 @@ export default function TicketChat({
     if (!el) return;
 
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
-    const hadNewMessage = (comments?.length || 0) > prevCommentsLengthRef.current;
     prevCommentsLengthRef.current = comments?.length || 0;
 
-    // Always scroll down if the user is already near the bottom or on initial load
-    if (isNearBottom || hadNewMessage) {
+    // Scroll to bottom if user is near bottom or just sent a message
+    if (isNearBottom || justSentRef.current) {
+      justSentRef.current = false;
       scrollToBottom(true);
     }
   }, [comments, scrollToBottom]);
@@ -110,7 +111,7 @@ export default function TicketChat({
       sendTyping(false);
       await sendMessage(text);
       setInputText('');
-      setTimeout(() => scrollToBottom(true), 50);
+      justSentRef.current = true;
     } catch {
       toast.error('Could not send message. Please try again.');
     } finally {
@@ -397,8 +398,8 @@ export default function TicketChat({
             <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-400">
               <span>Enter to send · Shift+Enter for newline</span>
               <span className="inline-flex items-center gap-1">
-                <span className="size-1.5 rounded-full bg-emerald-500"></span>
-                <span>Real-time delivery</span>
+                <span className={`size-1.5 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-500' : connectionStatus === 'connecting' ? 'bg-amber-400 animate-pulse' : 'bg-rose-400'}`}></span>
+                <span>{connectionStatus === 'connected' ? 'Real-time delivery' : connectionStatus === 'connecting' ? 'Connecting…' : 'Offline — messages send on reconnect'}</span>
               </span>
             </div>
           </form>

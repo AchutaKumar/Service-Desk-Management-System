@@ -79,6 +79,10 @@ export function useTicketChat(ticketId, initialComments = [], onTicketStatusChan
                 if (prev.some((u) => u.id === user.id)) return prev;
                 return [...prev, user];
               });
+              // Auto-clear stale typing indicator after 6s
+              setTimeout(() => {
+                setTypingUsers((prev) => prev.filter((u) => u.id !== user.id));
+              }, 6000);
             } else {
               setTypingUsers((prev) => prev.filter((u) => u.id !== user.id));
             }
@@ -104,7 +108,8 @@ export function useTicketChat(ticketId, initialComments = [], onTicketStatusChan
           return;
         }
 
-        // Exponential backoff reconnect: 1s, 2s, 4s, max 8s
+        // Exponential backoff reconnect: 1s, 2s, 4s, max 8s — give up after 20 attempts
+        if (reconnectAttemptsRef.current >= 20) return;
         const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 8000);
         reconnectAttemptsRef.current += 1;
         reconnectTimeoutRef.current = setTimeout(() => {

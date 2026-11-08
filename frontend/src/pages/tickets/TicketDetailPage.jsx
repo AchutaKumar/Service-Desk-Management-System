@@ -9,6 +9,7 @@ import { Panel } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { PageLoading, ErrorState, EmptyState, Spinner } from '../../components/ui/States';
 import Modal, { ConfirmDialog } from '../../components/ui/Modal';
+import { Select } from '../../components/ui/Form';
 import { StatusChip, SLAChip, PriorityChip } from '../../components/ui/Chips';
 import TicketChat from '../../components/tickets/TicketChat';
 import { ticketsApi, usersApi } from '../../api';

@@ -28,3 +28,4 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             "type": "notification",
             "notification": event["notification"],
         })
+
